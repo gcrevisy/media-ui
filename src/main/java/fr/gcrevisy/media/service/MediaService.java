@@ -7,4 +7,6 @@ import fr.gcrevisy.media.model.metier.Film;
 public interface MediaService {
 
     List<Film> getAllFilms();
+
+    Film saveOrUpdate(Film item);
 }

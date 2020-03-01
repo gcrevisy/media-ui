@@ -23,6 +23,7 @@ public class LocalRepository {
     private Logger logger;
     private static LocalRepository repository;
     private List<Film> films;
+    private String repositoryPath;
 
     private LocalRepository() {
         logger = LoggerFactory.getLogger(LocalRepository.class);
@@ -34,10 +35,10 @@ public class LocalRepository {
         } catch (IOException e) {
             logger.error("Erreur pendant le chargement des proprietes", e);
         }
-        String path = prop.getProperty("cacheLocation");
-        if (StringUtils.isBlank(path))
-            path = "C:\\MongoDB\\LocalRepository.data";
-        films = chargerCache(path);
+        repositoryPath = prop.getProperty("cacheLocation");
+        if (StringUtils.isBlank(repositoryPath))
+            repositoryPath = "C:\\MongoDB\\LocalRepository.data";
+        films = chargerCache();
     }
 
     public static LocalRepository getInstance() {
@@ -51,13 +52,21 @@ public class LocalRepository {
         return films;
     }
 
-    protected List<Film> chargerCache(String repositoryPath) {
+    public void enregistrerCache() throws IOException {
+        FileOutputStream fos = new FileOutputStream(repositoryPath);
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(films);
+        oos.close();
+        fos.close();
+    }
+
+    protected List<Film> chargerCache() {
         List<Film> result = new ArrayList<Film>();
 
         try {
 
             if (!Files.exists(Paths.get(repositoryPath))) {
-                creerRepository(repositoryPath, result);
+                enregistrerCache();
             }
 
             FileInputStream fis = new FileInputStream(repositoryPath);
@@ -77,11 +86,8 @@ public class LocalRepository {
         return result;
     }
 
-    protected void creerRepository(String repositoryPath, List<Film> liste) throws FileNotFoundException, IOException {
-        FileOutputStream fos = new FileOutputStream(repositoryPath);
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(liste);
-        oos.close();
-        fos.close();
+    public Film saveOrUpdate(Film item) {
+        films.add(item);
+        return item;
     }
 }
