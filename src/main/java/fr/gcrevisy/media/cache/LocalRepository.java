@@ -1,7 +1,6 @@
 package fr.gcrevisy.media.cache;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +9,8 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
@@ -87,7 +88,21 @@ public class LocalRepository {
     }
 
     public Film saveOrUpdate(Film item) {
+        if (StringUtils.isBlank(item.getId())) {
+            Film max = Collections.max(films, Comparator.comparing(Film::getId));
+            int maxId = Integer.parseInt(max.getId());
+            item.setId(String.valueOf(maxId++));
+        }
         films.add(item);
+        try {
+            enregistrerCache();
+        } catch (IOException e) {
+            logger.error("Erreur la sauvegarde du cache", e);
+        }
         return item;
+    }
+
+    public Film getById(String id) {
+        return films.stream().filter(item -> item.getId().equals(id)).findFirst().get();
     }
 }

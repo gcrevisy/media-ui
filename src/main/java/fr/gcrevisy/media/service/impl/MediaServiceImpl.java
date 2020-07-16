@@ -53,6 +53,10 @@ public class MediaServiceImpl implements MediaService {
             result = LocalRepository.getInstance().getAllFilms();
         }
 
+        for (int i = 0; i < 20; i++) {
+            result.add(new Film(String.valueOf(i), "libelle_" + i, "support" + i, String.valueOf(i)));
+        }
+
         // result.add(new Film("2 days in New York", "DVD", ""));
         // result.add(new Film("Django Unchained", "DVD", ""));
         // result.add(new Film("Brave", "DVD", ""));
@@ -201,6 +205,17 @@ public class MediaServiceImpl implements MediaService {
             // FIXME coder appel rest
         } else {
             result = LocalRepository.getInstance().saveOrUpdate(item);
+        }
+        return result;
+    }
+
+    @Override
+    public Film getById(String id) {
+        Film result = new Film();
+        if (restAvailable) {
+            // FIXME coder appel rest
+        } else {
+            result = LocalRepository.getInstance().getById(id);
         }
         return result;
     }

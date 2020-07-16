@@ -9,4 +9,6 @@ public interface MediaService {
     List<Film> getAllFilms();
 
     Film saveOrUpdate(Film item);
+
+    Film getById(String id);
 }
