@@ -1,7 +1,6 @@
 package fr.gcrevisy.media.cache;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +9,8 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
@@ -23,6 +24,7 @@ public class LocalRepository {
     private Logger logger;
     private static LocalRepository repository;
     private List<Film> films;
+    private String repositoryPath;
 
     private LocalRepository() {
         logger = LoggerFactory.getLogger(LocalRepository.class);
@@ -34,10 +36,10 @@ public class LocalRepository {
         } catch (IOException e) {
             logger.error("Erreur pendant le chargement des proprietes", e);
         }
-        String path = prop.getProperty("cacheLocation");
-        if (StringUtils.isBlank(path))
-            path = "C:\\MongoDB\\LocalRepository.data";
-        films = chargerCache(path);
+        repositoryPath = prop.getProperty("cacheLocation");
+        if (StringUtils.isBlank(repositoryPath))
+            repositoryPath = "C:\\MongoDB\\LocalRepository.data";
+        films = chargerCache();
     }
 
     public static LocalRepository getInstance() {
@@ -51,13 +53,21 @@ public class LocalRepository {
         return films;
     }
 
-    protected List<Film> chargerCache(String repositoryPath) {
+    public void enregistrerCache() throws IOException {
+        FileOutputStream fos = new FileOutputStream(repositoryPath);
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(films);
+        oos.close();
+        fos.close();
+    }
+
+    protected List<Film> chargerCache() {
         List<Film> result = new ArrayList<Film>();
 
         try {
 
             if (!Files.exists(Paths.get(repositoryPath))) {
-                creerRepository(repositoryPath, result);
+                enregistrerCache();
             }
 
             FileInputStream fis = new FileInputStream(repositoryPath);
@@ -77,11 +87,22 @@ public class LocalRepository {
         return result;
     }
 
-    protected void creerRepository(String repositoryPath, List<Film> liste) throws FileNotFoundException, IOException {
-        FileOutputStream fos = new FileOutputStream(repositoryPath);
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(liste);
-        oos.close();
-        fos.close();
+    public Film saveOrUpdate(Film item) {
+        if (StringUtils.isBlank(item.getId())) {
+            Film max = Collections.max(films, Comparator.comparing(Film::getId));
+            int maxId = Integer.parseInt(max.getId());
+            item.setId(String.valueOf(maxId++));
+        }
+        films.add(item);
+        try {
+            enregistrerCache();
+        } catch (IOException e) {
+            logger.error("Erreur la sauvegarde du cache", e);
+        }
+        return item;
+    }
+
+    public Film getById(String id) {
+        return films.stream().filter(item -> item.getId().equals(id)).findFirst().get();
     }
 }
